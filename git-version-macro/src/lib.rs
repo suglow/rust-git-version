@@ -255,6 +255,10 @@ fn git_remote_impl(args: Args) -> syn::Result<TokenStream2> {
 	}
 }
 
+#[cfg(windows)]
+const LINE_ENDING: &'static str = "\r\n";
+#[cfg(not(windows))]
+const LINE_ENDING: &'static str = "\n";
 
 /// Get the git info for the source code.
 #[proc_macro]
@@ -274,7 +278,7 @@ fn git_info_impl() -> syn::Result<TokenStream2> {
     let git_args = vec!["--always".to_string(), "--abbrev=0".to_string()];
     let describe = describe_cwd(git_args).unwrap_or("unknown".to_string());
     Ok(quote!({
-        concat!("Git_Url: ", #url, "\nGit_Commit: ",#describe)
+        concat!("Git_Url: ", #url, #LINE_ENDING, "Git_Commit: ", #describe)
     }))
 }
 
