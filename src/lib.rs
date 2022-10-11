@@ -15,6 +15,7 @@
 
 pub use git_version_macro::git_version;
 pub use git_version_macro::git_remote;
+pub use git_version_macro::git_info;
 
 /// Run `git describe` at compile time with custom flags.
 ///

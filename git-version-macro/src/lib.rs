@@ -254,3 +254,27 @@ fn git_remote_impl(args: Args) -> syn::Result<TokenStream2> {
 		}
 	}
 }
+
+
+/// Get the git info for the source code.
+#[proc_macro]
+pub fn git_info(_: TokenStream) -> TokenStream {
+	// let _ = parse_macro_input!(input as Args);
+	let tokens = match git_info_impl() {
+		Ok(x) => x,
+		Err(e) => e.to_compile_error(),
+	};
+	TokenStream::from(tokens)
+}
+
+fn git_info_impl() -> syn::Result<TokenStream2> {
+    let git_args = vec!["get-url".to_string(), "origin".to_string()];
+    let url = remote_cwd(git_args).unwrap_or("unknown".to_string());
+
+    let git_args = vec!["--always".to_string(), "--abbrev=0".to_string()];
+    let describe = describe_cwd(git_args).unwrap_or("unknown".to_string());
+    Ok(quote!({
+        concat!("Git_Url: ", #url, "\nGit_Commit: ",#describe)
+    }))
+}
+
