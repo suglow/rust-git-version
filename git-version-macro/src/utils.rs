@@ -27,6 +27,23 @@ where
 	Ok(String::from_utf8_lossy(&output).to_string())
 }
 
+
+/// Run `git remote` for the current working directory with custom flags to get version information from git.
+pub fn remote_cwd<I, S>(args: I) -> std::io::Result<String>
+where
+	I: IntoIterator<Item = S>,
+	S: AsRef<OsStr>,
+{
+	let cmd = Command::new("git")
+		.arg("remote")
+		.args(args)
+		.output()?;
+
+	let output = verbose_command_error("git remote", cmd)?;
+	let output = strip_trailing_newline(output.stdout);
+
+	Ok(String::from_utf8_lossy(&output).to_string())
+}
 /// Get the git directory for the current working directory.
 pub fn git_dir_cwd() -> std::io::Result<PathBuf> {
 	// Run git rev-parse --git-dir, and capture standard output.

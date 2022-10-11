@@ -14,7 +14,7 @@ use syn::{
 };
 
 mod utils;
-use self::utils::{describe_cwd, git_dir_cwd};
+use self::utils::{remote_cwd, describe_cwd, git_dir_cwd};
 
 macro_rules! error {
 	($($args:tt)*) => {
@@ -183,6 +183,68 @@ fn git_version_impl(args: Args) -> syn::Result<TokenStream2> {
 			} else {
 				Err(error!("Unable to get git or cargo version"))
 			}
+		}
+		Err(_) if args.fallback.is_some() => {
+			Ok(args.fallback.to_token_stream())
+		}
+		Err(e) => {
+			Err(error!("{}", e))
+		}
+	}
+}
+
+/// Get the git remote for the source code.
+///
+/// The following (named) arguments can be given:
+///
+/// - `args`: The arguments to call `git remote` with.
+///   Default: `args = ["-v", "show"]`
+///
+/// - `prefix`, `suffix`:
+///   The git remote will be prefixed/suffexed by these strings.
+///
+/// - `fallback`:
+///   If all else fails, this string will be given instead of reporting an
+///   error.
+///
+/// # Examples
+///
+/// ```ignore
+/// const VERSION: &str = git_remote!();
+/// ```
+///
+/// ```ignore
+/// const VERSION: &str = git_remote!(args = ["--abbrev=40", "--always"]);
+/// ```
+///
+/// ```
+/// # use git_remote::git_remote;
+/// const VERSION: &str = git_remote!(prefix = "git:",  fallback = "unknown");
+/// ```
+#[proc_macro]
+pub fn git_remote(input: TokenStream) -> TokenStream {
+	let args = parse_macro_input!(input as Args);
+
+	let tokens = match git_remote_impl(args) {
+		Ok(x) => x,
+		Err(e) => e.to_compile_error(),
+	};
+
+	TokenStream::from(tokens)
+}
+fn git_remote_impl(args: Args) -> syn::Result<TokenStream2> {
+	let git_args = args.git_args.map_or_else(
+		|| vec!["-v".to_string(), "show".to_string()],
+		|list| list.iter().map(|x| x.value()).collect()
+	);
+
+	match remote_cwd(&git_args) {
+		Ok(version) => {
+			let prefix = args.prefix.iter();
+			let suffix = args.suffix;
+			Ok(quote!({
+				concat!(#(#prefix,)* #version, #suffix)
+			}))
 		}
 		Err(_) if args.fallback.is_some() => {
 			Ok(args.fallback.to_token_stream())

@@ -14,6 +14,7 @@
 //! So you must have `git` installed somewhere in your `PATH`.
 
 pub use git_version_macro::git_version;
+pub use git_version_macro::git_remote;
 
 /// Run `git describe` at compile time with custom flags.
 ///
@@ -23,5 +24,16 @@ pub use git_version_macro::git_version;
 macro_rules! git_describe {
 	($($args:tt)*) => {
 		$crate::git_version!(args = [$($args)*])
+	};
+}
+
+/// Run `git remote` at compile time with custom flags.
+///
+/// This is just a short-hand for `git_remote!(args = [...])`,
+/// to be backwards compatible with earlier versions of this crate.
+#[macro_export]
+macro_rules! git_show_remote {
+	($($args:tt)*) => {
+		$crate::git_remote!(args = [$($args)*])
 	};
 }
